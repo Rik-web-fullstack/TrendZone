@@ -1,0 +1,195 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Heart, ShoppingCart } from "lucide-react";
+import { motion } from "framer-motion";
+
+const NewArrivals = () => {
+  const [products, setProducts] = useState({});
+  const [loading, setLoading] = useState(true);
+  const userId = localStorage.getItem("userId");
+
+  // 🟢 Fetch and group new products by category
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await axios.get("http://localhost:3000/new-arrivals");
+        const grouped = res.data.reduce((acc, product) => {
+          const cat = product.category || "Others";
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(product);
+          return acc;
+        }, {});
+        setProducts(grouped);
+      } catch (err) {
+        console.error("❌ Error fetching new arrivals:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  // 🛒 Add to Cart
+  const handleAddToCart = async (productId) => {
+    if (!userId) {
+      alert("Please log in to add items to your cart 🧑‍💻");
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        "http://localhost:3000/api/cart/add",
+        { userId, productId, quantity: 1 },
+        { withCredentials: true }
+      );
+      alert("🛒 Product added to cart successfully!");
+    } catch (err) {
+      console.error("❌ Add to cart failed:", err);
+      alert("Failed to add to cart.");
+    }
+  };
+
+  // 💖 Add to Wishlist
+  const handleAddToWishlist = async (productId) => {
+    if (!userId) {
+      alert("Please log in to save items ❤️");
+      return;
+    }
+    try {
+      const res = await axios.post(
+        "http://localhost:3000/api/wishlist/add",
+        { userId, productId },
+        { withCredentials: true }
+      );
+      alert(res.data.message || "❤️ Added to wishlist!");
+    } catch (err) {
+      console.error("❌ Wishlist error:", err);
+      alert("Failed to add to wishlist.");
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-700">
+        Loading New Arrivals...
+      </div>
+    );
+
+  return (
+    <section className="py-24 bg-gradient-to-b from-beige/30 via-white to-beige/10">
+      {/* Section Heading */}
+      <div className="text-center mb-16 relative">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-4xl md:text-6xl font-bold tracking-[0.15em] uppercase"
+        >
+          <span className="bg-gradient-to-r from-beige via-black to-beige bg-clip-text text-transparent">
+            New
+          </span>{" "}
+          <span className="italic font-[Playfair_Display] text-black">
+            Arrivals
+          </span>
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.8 }}
+          className="mt-4 text-black/70 text-sm md:text-lg font-light"
+        >
+          Discover our latest pieces — curated for every space.
+        </motion.p>
+
+        <motion.div
+          initial={{ width: 0, opacity: 0 }}
+          whileInView={{ width: "100px", opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.7 }}
+          className="h-[2px] bg-beige mx-auto mt-4 rounded-full"
+        />
+      </div>
+
+      {/* Category Rows */}
+      <div className="space-y-20 max-w-7xl mx-auto px-6">
+        {Object.entries(products).map(([category, items]) => (
+          <div key={category} className="space-y-6">
+            {/* Category Title */}
+            <div className="flex justify-between items-center">
+              <h3 className="text-2xl md:text-3xl font-semibold tracking-wide text-black">
+                {category}
+              </h3>
+              <a
+                href={`/category/${category.toLowerCase()}`}
+                className="text-sm text-beige hover:underline"
+              >
+                View All →
+              </a>
+            </div>
+
+            {/* Horizontal Product Scroll */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="flex gap-6 overflow-x-auto scrollbar-thin scrollbar-thumb-beige/40 scrollbar-track-transparent pb-4"
+            >
+              {items.map((product) => (
+                <motion.div
+                  key={product._id}
+                  whileHover={{ scale: 1.03 }}
+                  className="relative min-w-[250px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-500"
+                >
+                  {/* Image */}
+                  <img
+                    src={`http://localhost:3000/uploads/${product.Prod_img?.[0]}`}
+                    alt={product.name}
+                    className="w-full h-56 object-cover rounded-t-2xl"
+                  />
+
+                  {/* Product Info */}
+                  <div className="p-4 space-y-2">
+                    <h4 className="text-lg font-semibold text-gray-800">
+                      {product.name}
+                    </h4>
+                    <p className="text-sm text-gray-500 line-clamp-2">
+                      {product.description}
+                    </p>
+                    <p className="text-black font-semibold tracking-wide drop-shadow-[0_0_3px_rgba(214,198,161,0.5)]">
+                      ₹ {product.price.toLocaleString()}
+                    </p>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex justify-between items-center px-4 pb-4">
+                    <button
+                      onClick={() => handleAddToCart(product._id)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-black text-beige hover:bg-beige hover:text-black transition-all duration-300"
+                    >
+                      <ShoppingCart size={14} />
+                      Add to Cart
+                    </button>
+
+                    <button
+                      onClick={() => handleAddToWishlist(product._id)}
+                      className="flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 hover:bg-pink-100 transition-all"
+                    >
+                      <Heart
+                        size={18}
+                        className="text-gray-600 hover:text-pink-500 transition-transform duration-200 hover:scale-110"
+                      />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+export default NewArrivals;
