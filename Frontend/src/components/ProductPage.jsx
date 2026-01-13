@@ -1,8 +1,10 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { motion } from "framer-motion";
 import { Heart, ShoppingCart } from "lucide-react";
+import Navbar from "./Navbar";
 
 const ProductPage = () => {
   const { category, subcategory } = useParams();
@@ -10,9 +12,11 @@ const ProductPage = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const ACCENT = "#5c5346";
+  const userId = localStorage.getItem("userId");
 
-  const formatForBackend = (str = "") => str.replace(/-/g, " ").toLowerCase().trim();
+  const formatForBackend = (str = "") =>
+    str.replace(/-/g, " ").toLowerCase().trim();
+
   const toTitleCase = (str = "") =>
     str
       .replace(/-/g, " ")
@@ -20,143 +24,190 @@ const ProductPage = () => {
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
 
+  /* ---------------- FETCH PRODUCTS ---------------- */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
         const formattedCategory = formatForBackend(category);
-        const formattedSubCategory = subcategory ? formatForBackend(subcategory) : "";
+        const formattedSubCategory = subcategory
+          ? formatForBackend(subcategory)
+          : "";
 
         let response;
         if (formattedCategory === "all") {
-        // ✅ Fetch all products when /products/all is visited
-            response = await axios.get("http://localhost:3000/api/products");
-            } else {
-            response = await axios.get("http://localhost:3000/api/products", {
-            params: { category: formattedCategory, subcategory: formattedSubCategory },
+          response = await axios.get("http://localhost:3000/api/products");
+        } else {
+          response = await axios.get("http://localhost:3000/api/products", {
+            params: {
+              category: formattedCategory,
+              subcategory: formattedSubCategory,
+            },
           });
         }
-        setProducts(response.data);
+
+        setProducts(response.data || []);
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("❌ Error fetching products:", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchProducts();
   }, [category, subcategory]);
 
+  /* ---------------- ADD TO CART ---------------- */
+  const handleAddToCart = async (productId) => {
+    if (!userId) {
+      alert("Please log in to add items to cart 🛒");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      await axios.post(
+        "http://localhost:3000/api/cart/add",
+        {
+          userId,
+          productId,
+          quantity: 1,
+        },
+        { withCredentials: true }
+      );
+      alert("🛒 Product added to cart!");
+    } catch (err) {
+      console.error("Add to cart failed:", err);
+      alert("Failed to add product to cart");
+    }
+  };
+
+  /* ---------------- ADD TO WISHLIST ---------------- */
+  const handleAddToWishlist = async (productId) => {
+    if (!userId) {
+      alert("Please log in to save items ❤️");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      await axios.post(
+        "http://localhost:3000/api/wishlist/add",
+        {
+          userId,
+          productId,
+        },
+        { withCredentials: true }
+      );
+      alert("❤️ Added to wishlist!");
+    } catch (err) {
+      console.error("Add to wishlist failed:", err);
+      alert("Failed to add to wishlist");
+    }
+  };
+
+  /* ---------------- LOADING ---------------- */
   if (loading)
     return (
-      <div className="flex justify-center items-center h-[70vh] text-lg font-semibold text-gray-500 animate-pulse">
-        Loading curated designs...
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center bg-[#f9f7f3] text-lg font-semibold text-gray-500">
+          Loading curated designs...
+        </div>
+      </>
     );
 
+  /* ---------------- EMPTY ---------------- */
   if (products.length === 0)
     return (
-      <div className="flex justify-center items-center h-[70vh] text-lg font-semibold text-gray-500">
-        No designs found in this collection.
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center bg-[#f9f7f3] text-lg font-semibold text-gray-500">
+          No designs found in this collection.
+        </div>
+      </>
     );
 
+  /* ---------------- MAIN ---------------- */
   return (
-    <section className="min-h-screen bg-gradient-to-b from-[#f9f7f3] via-[#f6f3ed] to-[#f4efe7] px-6 md:px-16 py-24">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-16"
-      >
-        <h2 className="text-4xl md:text-5xl font-extrabold text-[#1a1a1a] mb-3">
-          {toTitleCase(subcategory || category)}
-        </h2>
-        <div className="w-20 h-1 mx-auto bg-[#5c5346] rounded-full mb-4"></div>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Explore our curated collection of {toTitleCase(subcategory || category)} —
-          crafted to complement your living space with elegance and comfort.
-        </p>
-      </motion.div>
+    <div className="min-h-screen bg-[#f9f7f3]">
+      <Navbar />
 
-      {/* Product Grid */}
-      <motion.div
-        layout
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10"
-      >
-        {products.map((product, index) => (
-          <motion.div
-            key={product._id}
-            className="relative bg-white rounded-3xl shadow-md hover:shadow-2xl border border-[#e8e3da]/70 overflow-hidden transition-all duration-500 group cursor-pointer"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-          >
-            {/* Product Image */}
+      <section className="px-6 md:px-16 py-24">
+        {/* Header */}
+        <div className="text-center mb-16 mt-16">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-[#1a1a1a] mb-3">
+            {toTitleCase(subcategory || category)}
+          </h2>
+          <div className="w-20 h-1 mx-auto bg-[#5c5346] rounded-full mb-4"></div>
+        </div>
+
+        {/* Product Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+          {products.map((product) => (
             <div
-              className="relative h-64 overflow-hidden"
-              onClick={() => navigate(`/product/${product._id}`)}
+              key={product._id}
+              className="relative bg-white rounded-3xl shadow-md hover:shadow-2xl border overflow-hidden group flex flex-col"
             >
-              <motion.img
-                src={`http://localhost:3000/uploads/${product.Prod_img?.[0]}`}
-                alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                whileHover={{ scale: 1.05 }}
-              />
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition duration-300"
-              />
-            </div>
-
-            {/* Floating icons */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition"
-            >
-              <button
-                className="bg-white/90 backdrop-blur-md p-2 rounded-full shadow hover:bg-pink-100 transition"
-                title="Add to Wishlist"
+              {/* Image */}
+              <div
+                className="relative h-64 overflow-hidden cursor-pointer"
+                onClick={() => navigate(`/product/${product._id}`)}
               >
-                <Heart className="w-5 h-5 text-[#5c5346] hover:text-pink-500" />
-              </button>
-              <button
-                className="bg-white/90 backdrop-blur-md p-2 rounded-full shadow hover:bg-[#e8e3da]/80 transition"
-                title="Add to Cart"
-              >
-                <ShoppingCart className="w-5 h-5 text-[#5c5346] hover:text-[#1a1a1a]" />
-              </button>
-            </motion.div>
+                <img
+                  src={`http://localhost:3000/uploads/${product.Prod_img?.[0]}`}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+              </div>
 
-            {/* Product Info */}
-            <div className="p-5 space-y-2">
-              <h3 className="font-semibold text-[#1a1a1a] text-lg line-clamp-1">
-                {product.name}
-              </h3>
-              <p className="text-sm text-gray-500 line-clamp-2">
-                {product.description}
-              </p>
-              <div className="flex justify-between items-center pt-2">
-                <span className="text-lg font-semibold text-[#5c5346]">
-                  ₹{product.price}
-                </span>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
+              {/* Floating Icons */}
+              <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddToWishlist(product._id);
+                  }}
+                  className="bg-white/90 p-2 rounded-full shadow hover:bg-pink-100"
+                >
+                  <Heart className="w-5 h-5 text-[#5c5346] hover:text-pink-500" />
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddToCart(product._id);
+                  }}
+                  className="bg-white/90 p-2 rounded-full shadow hover:bg-[#e8e3da]/80"
+                >
+                  <ShoppingCart className="w-5 h-5 text-[#5c5346]" />
+                </button>
+              </div>
+
+              {/* Info */}
+              <div className="p-5 flex flex-col flex-1 justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg">{product.name}</h3>
+                  <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                    {product.description}
+                  </p>
+                  <p className="mt-2 font-semibold text-[#5c5346]">
+                    ₹ {product.price}
+                  </p>
+                </div>
+
+                <button
                   onClick={() => navigate(`/product/${product._id}`)}
-                  className="text-sm font-semibold text-[#5c5346] hover:text-[#1a1a1a] transition"
+                  className="mt-4 w-full text-sm font-semibold text-[#5c5346] border border-[#5c5346] py-2 rounded-lg hover:bg-[#5c5346] hover:text-white transition"
                 >
                   View Details →
-                </motion.button>
+                </button>
               </div>
             </div>
-
-            {/* Decorative bottom border accent */}
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#d9cfc1] via-[#5c5346] to-[#d9cfc1] opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-          </motion.div>
-        ))}
-      </motion.div>
-    </section>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 };
 

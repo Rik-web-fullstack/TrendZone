@@ -8,6 +8,9 @@ import Login from './components/Login'
 import Wishlist from './components/Wishlist'
 import ProductPage from "./components/ProductPage";
 import Payment from './components/payment'
+import Orders from './components/Orders'
+import ProductDetails from './components/ProductDetails'
+import AboutUS from './components/AboutUS'
 const App = () => {
   return (
       <BrowserRouter>
@@ -21,6 +24,9 @@ const App = () => {
         <Route path="/category/:category" element={<ProductPage />} />
         <Route path="/category/:category/:subcategory" element={<ProductPage />} />
         <Route path='/payment' element={<Payment/>}></Route>
+        <Route path='/orders' element={<Orders/>}></Route>
+        <Route path='/product/:id' element={<ProductDetails/>}></Route>
+        <Route path='/about' element={<AboutUS/>}></Route>
       </Routes>
       </BrowserRouter>
   )

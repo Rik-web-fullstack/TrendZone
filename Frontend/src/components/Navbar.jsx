@@ -18,12 +18,17 @@ import { motion, AnimatePresence } from "framer-motion";
 const Navbar = () => {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [dropdown, setDropdown] = useState(null);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [scrolled, setScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(""); // ✅ new
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  // ✅ Categories
+  /* 🎨 Dynamic colors */
+  const navTextColor = scrolled ? "text-beige" : "text-black";
+  const navIconColor = scrolled ? "text-beige" : "text-black";
+
+  /* ✅ Categories */
   const categories = {
     furniture: [
       "Sofa & Sectionals",
@@ -58,7 +63,7 @@ const Navbar = () => {
     ],
   };
 
-  // ✅ Login check
+  /* ✅ Login check */
   useEffect(() => {
     axios
       .get("http://localhost:3000/api/users/verify", { withCredentials: true })
@@ -68,14 +73,14 @@ const Navbar = () => {
       .catch(() => setUser(null));
   }, []);
 
-  // ✅ Scroll listener
+  /* ✅ Scroll listener */
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // ✅ Logout
+  /* ✅ Logout */
   const handleLogout = async () => {
     await axios.post(
       "http://localhost:3000/api/users/logout",
@@ -102,10 +107,9 @@ const Navbar = () => {
     setMobileMenu(false);
   };
 
-  // ✅ Handle search
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim() !== "") {
+    if (searchQuery.trim()) {
       navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
     }
@@ -126,25 +130,33 @@ const Navbar = () => {
           initial={{ y: -15, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/home")}
           className="text-2xl font-bold cursor-pointer tracking-wide select-none"
         >
-          <span className="text-beige">Furni</span>
-          <span className="text-white">Flex</span>
+          <span className={scrolled ? "text-beige" : "text-beige"}>Furni</span>
+          <span className={scrolled ? "text-white" : "text-beige"}>Flex</span>
         </motion.div>
 
-        {/* ✅ Search bar (desktop) */}
+        {/* Search (desktop) */}
         <form
           onSubmit={handleSearch}
-          className="hidden md:flex items-center bg-white/5 border border-beige-muted/20 px-3 py-2 rounded-full w-1/3 backdrop-blur-sm"
+          className={`hidden md:flex items-center px-3 py-2 rounded-full w-1/3 transition ${
+            scrolled
+              ? "bg-black/80 border border-beige-muted/20"
+              : "bg-white/80 border border-black/10"
+          }`}
         >
-          <Search className="text-beige-muted w-5 h-5 mr-2" />
+          <Search className={`w-5 h-5 mr-2 ${navIconColor}`} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search for products..."
-            className="bg-transparent outline-none flex-1 text-sm text-beige-muted placeholder-beige-muted/70"
+            className={`bg-transparent outline-none flex-1 text-sm ${
+              scrolled
+                ? "text-beige placeholder-beige"
+                : "text-black placeholder-black"
+            }`}
           />
         </form>
 
@@ -152,32 +164,87 @@ const Navbar = () => {
         <div className="flex items-center gap-5">
           <Heart
             onClick={() => navigate("/wishlist")}
-            className="w-6 h-6 text-beige-muted cursor-pointer hover:text-beige transition-transform duration-200 hover:scale-110"
+            className={`w-6 h-6 ${navIconColor} cursor-pointer hover:scale-110 transition`}
           />
+
           <ShoppingCart
             onClick={() => navigate("/cart")}
-            className="w-6 h-6 text-beige-muted cursor-pointer hover:text-beige transition-transform duration-200 hover:scale-110"
+            className={`w-6 h-6 ${navIconColor} cursor-pointer hover:scale-110 transition`}
           />
-          {user ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-beige">
-                Hi, {user.name.split(" ")[0]}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="bg-beige text-black text-sm px-3 py-1 rounded-full flex items-center gap-1 hover:bg-white transition-all"
-              >
-                <LogOut size={16} /> Logout
-              </button>
-            </div>
-          ) : (
-            <User
-              onClick={() => navigate("/")}
-              className="w-6 h-6 text-beige-muted cursor-pointer hover:text-beige transition-transform duration-200 hover:scale-110"
-            />
-          )}
+
+          {/* Account */}
           <div
-            className="md:hidden cursor-pointer text-beige"
+            className="relative"
+            onMouseEnter={() => setAccountOpen(true)}
+            onMouseLeave={() => setAccountOpen(false)}
+          >
+            <User
+              className={`w-6 h-6 ${navIconColor} cursor-pointer hover:scale-110 transition`}
+            />
+
+            <AnimatePresence>
+              {accountOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 mt-3 w-56 bg-black border border-beige-muted/20 rounded-md shadow-soft-beige overflow-hidden"
+                >
+                  {user ? (
+                    <>
+                      <div className="px-4 py-3 border-b border-beige-muted/20">
+                        <p className="text-sm text-beige font-semibold">
+                          Hello, {user.name.split(" ")[0]}
+                        </p>
+                        <p className="text-xs text-beige-muted">
+                          {user.email}
+                        </p>
+                      </div>
+
+                      <ul className="text-sm">
+                        {["profile", "orders", "wishlist", "addresses"].map(
+                          (item) => (
+                            <li
+                              key={item}
+                              onClick={() => navigate(`/${item}`)}
+                              className="px-4 py-2 text-beige hover:bg-beige/10 cursor-pointer capitalize"
+                            >
+                              {item.replace("-", " ")}
+                            </li>
+                          )
+                        )}
+                        <li
+                          onClick={handleLogout}
+                          className="px-4 py-2 text-red-400 hover:bg-red-500/10 cursor-pointer flex items-center gap-2"
+                        >
+                          <LogOut size={16} /> Logout
+                        </li>
+                      </ul>
+                    </>
+                  ) : (
+                    <ul className="text-sm">
+                      <li
+                        onClick={() => navigate("/login")}
+                        className="px-4 py-3 text-beige hover:bg-beige/10 cursor-pointer"
+                      >
+                        Login
+                      </li>
+                      <li
+                        onClick={() => navigate("/register")}
+                        className="px-4 py-3 text-beige hover:bg-beige/10 cursor-pointer"
+                      >
+                        Sign Up
+                      </li>
+                    </ul>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Mobile Menu */}
+          <div
+            className={`md:hidden cursor-pointer ${navIconColor}`}
             onClick={() => setMobileMenu(!mobileMenu)}
           >
             {mobileMenu ? <X size={24} /> : <Menu size={24} />}
@@ -185,36 +252,36 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* 🔹 Desktop Categories */}
+      {/* Desktop Categories */}
       <div className="hidden md:flex justify-center border-t border-beige-muted/10 bg-black/80">
-        <ul className="flex items-center gap-10 py-3 text-beige-muted font-medium uppercase text-sm tracking-wide">
-          {Object.entries(categories).map(([categoryKey, subcats]) => (
+        <ul className="flex gap-10 py-3 text-beige-muted uppercase text-sm">
+          {Object.entries(categories).map(([key, subs]) => (
             <li
-              key={categoryKey}
-              className="relative group cursor-pointer"
-              onMouseEnter={() => toggleDropdown(categoryKey)}
+              key={key}
+              className="relative cursor-pointer"
+              onMouseEnter={() => toggleDropdown(key)}
               onMouseLeave={() => toggleDropdown(null)}
             >
               <div
-                onClick={() => handleNavigate(categoryKey)}
-                className="flex items-center gap-1 hover:text-beige transition-colors capitalize"
+                onClick={() => handleNavigate(key)}
+                className="flex items-center gap-1 hover:text-beige capitalize"
               >
-                {categoryKey} <ChevronDown size={16} />
+                {key} <ChevronDown size={16} />
               </div>
 
               <AnimatePresence>
-                {dropdown === categoryKey && (
+                {dropdown === key && (
                   <motion.ul
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute left-0 mt-2 w-52 bg-black border border-beige-muted/20 shadow-soft-beige rounded-md overflow-hidden"
+                    className="absolute mt-2 w-52 bg-black border border-beige-muted/20 rounded-md"
                   >
-                    {subcats.map((sub) => (
+                    {subs.map((sub) => (
                       <li
                         key={sub}
-                        onClick={() => handleNavigate(categoryKey, sub)}
-                        className="px-4 py-2 text-beige-muted hover:text-beige hover:bg-beige/10 cursor-pointer transition-colors"
+                        onClick={() => handleNavigate(key, sub)}
+                        className="px-4 py-2 text-beige hover:bg-beige/10 cursor-pointer"
                       >
                         {sub}
                       </li>
@@ -226,54 +293,6 @@ const Navbar = () => {
           ))}
         </ul>
       </div>
-
-      {/* 🔹 Mobile Menu */}
-      <AnimatePresence>
-        {mobileMenu && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="md:hidden bg-black border-t border-beige-muted/20 shadow-lg"
-          >
-            {/* ✅ Search (mobile) */}
-            <form onSubmit={handleSearch} className="flex items-center bg-white/10 border border-beige-muted/20 px-3 py-2 rounded-full mt-3 mx-4">
-              <Search className="text-beige-muted w-5 h-5 mr-2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search..."
-                className="bg-transparent outline-none flex-1 text-sm text-beige-muted placeholder-beige-muted/70"
-              />
-            </form>
-
-            <ul className="flex flex-col p-4 gap-4 font-medium text-beige">
-              {Object.entries(categories).map(([categoryKey, subcats]) => (
-                <li key={categoryKey}>
-                  <div
-                    onClick={() => handleNavigate(categoryKey)}
-                    className="flex justify-between items-center py-2 cursor-pointer hover:text-beige-muted"
-                  >
-                    <span className="capitalize">{categoryKey}</span>
-                  </div>
-                  <ul className="pl-4 border-l border-beige-muted/20">
-                    {subcats.map((sub) => (
-                      <li
-                        key={sub}
-                        onClick={() => handleNavigate(categoryKey, sub)}
-                        className="py-1 text-sm hover:text-beige-muted cursor-pointer"
-                      >
-                        {sub}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </nav>
   );
 };

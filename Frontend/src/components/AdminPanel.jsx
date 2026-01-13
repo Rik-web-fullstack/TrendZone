@@ -50,44 +50,51 @@ const AdminPanel = () => {
 
   // Upload new product
   const handleUpload = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!Category || !SubCategory) {
-      alert("Please select both category and subcategory.");
-      return;
-    }
-    if (files.length === 0) {
-      alert("Please upload at least one image.");
-      return;
-    }
+  if (!Category || !SubCategory) {
+    alert("Please select both category and subcategory.");
+    return;
+  }
+  if (files.length === 0) {
+    alert("Please upload at least one image.");
+    return;
+  }
 
-    const formdata = new FormData();
-    formdata.append("name", name);
-    formdata.append("price", price);
-    formdata.append("description", description);
-    formdata.append("Category", Category);
-    formdata.append("SubCategory", SubCategory);
-    files.forEach((file) => formdata.append("file", file));
+  const formdata = new FormData();
+  formdata.append("name", name);
+  formdata.append("price", price);
+  formdata.append("description", description);
+  formdata.append("Category", Category);
+  formdata.append("SubCategory", SubCategory);
+  files.forEach((file) => formdata.append("file", file));
 
-    try {
-      setUploading(true);
-      const res = await axios.post("http://localhost:3000/upload", formdata, {
+  try {
+    setUploading(true);
+
+    const res = await axios.post(
+      "http://localhost:3000/api/admin/products",
+      formdata,
+      {
         headers: { "Content-Type": "multipart/form-data" },
-      });
-      if (res.data.success) {
-        alert("✅ Product uploaded successfully!");
-        fetchProducts();
-        resetForm();
-      } else {
-        alert("⚠️ Upload failed. Try again.");
       }
-    } catch (error) {
-      console.error(error);
-      alert("❌ Failed to upload product.");
-    } finally {
-      setUploading(false);
+    );
+
+    if (res.data.success) {
+      alert("✅ Product uploaded successfully!");
+      fetchProducts();
+      resetForm();
+    } else {
+      alert("⚠️ Upload failed. Try again.");
     }
-  };
+  } catch (error) {
+    console.error(error);
+    alert("❌ Failed to upload product.");
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   // Reset form
   const resetForm = () => {

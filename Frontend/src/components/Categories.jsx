@@ -29,7 +29,7 @@ const Categories = () => {
     {
       name: "Decor",
       image: "/images/categories/decor.jpg",
-      path: "decor",
+      path: "indoors",
     },
     {
       name: "Outdoors",
@@ -39,12 +39,12 @@ const Categories = () => {
     {
       name: "Workspace",
       image: "/images/categories/workspace.jpg",
-      path: "workspace",
+      path: "furniture/tables",
     },
     {
       name: "Accessories",
       image: "/images/categories/accessories.jpg",
-      path: "accessories",
+      path: "outdoors/accessories",
     },
   ];
 
