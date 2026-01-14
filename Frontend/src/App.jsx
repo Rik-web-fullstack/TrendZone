@@ -7,7 +7,7 @@ import Register from './components/Register'
 import Login from './components/Login'
 import Wishlist from './components/Wishlist'
 import ProductPage from "./components/ProductPage";
-import Payment from './components/payment'
+import Payment from './components/Payment'
 import Orders from './components/Orders'
 import ProductDetails from './components/ProductDetails'
 import AboutUS from './components/AboutUS'
