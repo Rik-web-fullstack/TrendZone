@@ -4,15 +4,22 @@ const users = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-// ⚠️ In production, use environment variables
-const JWT_SECRET = "secretkey";
+/* ================================
+   🔐 ENV SECRET (REQUIRED)
+================================ */
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /* ================================
-   🟢 REGISTER ROUTE
+   🟢 REGISTER
 ================================ */
 router.post("/register", async (req, res) => {
   try {
     const { name, phone, email, password, address } = req.body;
+
+    const existingUser = await users.findOne({ email });
+    if (existingUser)
+      return res.status(400).json({ message: "Email already registered" });
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new users({
@@ -27,18 +34,18 @@ router.post("/register", async (req, res) => {
     res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
     console.error("Registration Error:", error);
-    res.status(400).json({ message: "Error during registration", error });
+    res.status(400).json({ message: "Error during registration" });
   }
 });
 
 /* ================================
-   🔵 LOGIN ROUTE (with cookie)
+   🔵 LOGIN (COOKIE SAFE)
 ================================ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await users.findOne({ email });
 
+    const user = await users.findOne({ email });
     if (!user)
       return res.status(404).json({ message: "User not found" });
 
@@ -46,17 +53,17 @@ router.post("/login", async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
-
-    // Send JWT token in cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false, // ✅ Set to true in production (HTTPS)
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, {
+      expiresIn: "7d",
     });
 
-    // ✅ Include user ID in response
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,          // 🔥 REQUIRED on Render
+      sameSite: "none",      // 🔥 REQUIRED for cross-origin
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
       message: "Login successful",
       user: {
@@ -64,30 +71,28 @@ router.post("/login", async (req, res) => {
         name: user.name,
         email: user.email,
       },
-      token, // optional for frontend storage if you want
     });
   } catch (error) {
     console.error("Login Error:", error);
-    res.status(500).json({ message: "Login failed", error: error.message });
+    res.status(500).json({ message: "Login failed" });
   }
 });
 
 /* ================================
-   🟣 VERIFY LOGIN (auto-login)
+   🟣 VERIFY LOGIN
 ================================ */
 router.get("/verify", async (req, res) => {
   try {
     const token = req.cookies.token;
     if (!token)
-      return res.status(401).json({ loggedIn: false, message: "No token found" });
+      return res.status(401).json({ loggedIn: false });
 
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await users.findById(decoded.id).select("-password");
 
     if (!user)
-      return res.status(401).json({ loggedIn: false, message: "Invalid token" });
+      return res.status(401).json({ loggedIn: false });
 
-    // ✅ Auto-login success response
     res.json({
       loggedIn: true,
       user: {
@@ -97,16 +102,19 @@ router.get("/verify", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Verify Error:", error);
-    res.status(401).json({ loggedIn: false, message: "Token verification failed" });
+    res.status(401).json({ loggedIn: false });
   }
 });
 
 /* ================================
-   🔴 LOGOUT ROUTE
+   🔴 LOGOUT (FIXED)
 ================================ */
 router.post("/logout", (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
   res.json({ message: "Logged out successfully" });
 });
 
