@@ -1,8 +1,10 @@
+// ProductPage.jsx
+
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api/api"; // ✅ centralized api
 import { Heart, ShoppingCart } from "lucide-react";
 import Navbar from "./Navbar";
 
@@ -29,16 +31,18 @@ const ProductPage = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+
         const formattedCategory = formatForBackend(category);
         const formattedSubCategory = subcategory
           ? formatForBackend(subcategory)
           : "";
 
         let response;
+
         if (formattedCategory === "all") {
-          response = await axios.get("http://localhost:3000/api/products");
+          response = await api.get("/api/products");
         } else {
-          response = await axios.get("http://localhost:3000/api/products", {
+          response = await api.get("/api/products", {
             params: {
               category: formattedCategory,
               subcategory: formattedSubCategory,
@@ -66,15 +70,11 @@ const ProductPage = () => {
     }
 
     try {
-      await axios.post(
-        "http://localhost:3000/api/cart/add",
-        {
-          userId,
-          productId,
-          quantity: 1,
-        },
-        { withCredentials: true }
-      );
+      await api.post("/api/cart/add", {
+        userId,
+        productId,
+        quantity: 1,
+      });
       alert("🛒 Product added to cart!");
     } catch (err) {
       console.error("Add to cart failed:", err);
@@ -91,14 +91,10 @@ const ProductPage = () => {
     }
 
     try {
-      await axios.post(
-        "http://localhost:3000/api/wishlist/add",
-        {
-          userId,
-          productId,
-        },
-        { withCredentials: true }
-      );
+      await api.post("/api/wishlist/add", {
+        userId,
+        productId,
+      });
       alert("❤️ Added to wishlist!");
     } catch (err) {
       console.error("Add to wishlist failed:", err);
@@ -155,7 +151,7 @@ const ProductPage = () => {
                 onClick={() => navigate(`/product/${product._id}`)}
               >
                 <img
-                  src={`http://localhost:3000/uploads/${product.Prod_img?.[0]}`}
+                  src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${product.Prod_img?.[0]}`}
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />

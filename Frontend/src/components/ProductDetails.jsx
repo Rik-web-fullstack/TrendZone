@@ -1,8 +1,10 @@
+// ProductDetails.jsx
+
 "use client";
 
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/api"; // ✅ centralized api
 import {
   Star,
   Heart,
@@ -42,9 +44,7 @@ const ProductDetails = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:3000/api/products/${id}`
-        );
+        const res = await api.get(`/api/products/${id}`);
         setProduct(res.data);
         setSelectedImage(res.data?.Prod_img?.[0]);
       } catch (error) {
@@ -66,15 +66,11 @@ const ProductDetails = () => {
     }
 
     try {
-      await axios.post(
-        "http://localhost:3000/api/cart/add",
-        {
-          userId,
-          productId: product._id,
-          quantity: 1,
-        },
-        { withCredentials: true }
-      );
+      await api.post("/api/cart/add", {
+        userId,
+        productId: product._id,
+        quantity: 1,
+      });
       alert("🛒 Product added to cart!");
     } catch (err) {
       console.error("Add to cart failed:", err);
@@ -91,14 +87,10 @@ const ProductDetails = () => {
     }
 
     try {
-      await axios.post(
-        "http://localhost:3000/api/wishlist/add",
-        {
-          userId,
-          productId: product._id,
-        },
-        { withCredentials: true }
-      );
+      await api.post("/api/wishlist/add", {
+        userId,
+        productId: product._id,
+      });
       alert("❤️ Added to wishlist!");
     } catch (err) {
       console.error("Add to wishlist failed:", err);
@@ -132,7 +124,6 @@ const ProductDetails = () => {
   const discountedPrice = Math.round(product.price * (1 - discount / 100));
   const rating = 4.3;
 
-  /* ---------------- MAIN ---------------- */
   return (
     <div className="min-h-screen bg-[#f9f7f3]">
       <Navbar />
@@ -142,7 +133,7 @@ const ProductDetails = () => {
           {/* IMAGE SECTION */}
           <div>
             <img
-              src={`http://localhost:3000/uploads/${selectedImage}`}
+              src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${selectedImage}`}
               className="w-full h-[420px] object-cover rounded-xl shadow"
               alt={product.name}
             />
@@ -151,7 +142,7 @@ const ProductDetails = () => {
               {product.Prod_img?.map((img, index) => (
                 <img
                   key={index}
-                  src={`http://localhost:3000/uploads/${img}`}
+                  src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${img}`}
                   onClick={() => setSelectedImage(img)}
                   className={`w-20 h-20 object-cover rounded-lg cursor-pointer border ${
                     selectedImage === img
@@ -204,7 +195,6 @@ const ProductDetails = () => {
               {product.description}
             </p>
 
-            {/* HIGHLIGHTS */}
             <ul className="mt-4 list-disc list-inside text-gray-700">
               <li>Premium build quality</li>
               <li>Long-lasting durability</li>
@@ -212,7 +202,6 @@ const ProductDetails = () => {
               <li>Easy to maintain</li>
             </ul>
 
-            {/* BUTTONS */}
             <div className="flex gap-4 mt-6">
               <button
                 onClick={handleAddToCart}
@@ -229,7 +218,6 @@ const ProductDetails = () => {
               </button>
             </div>
 
-            {/* DELIVERY INFO */}
             <div className="mt-6 space-y-2 text-gray-700">
               <p className="flex items-center gap-2">
                 <Truck size={18} /> Free delivery in 3–5 days
@@ -241,7 +229,7 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        {/* REVIEWS SECTION */}
+        {/* REVIEWS */}
         <div className="mt-14">
           <h2 className="text-2xl font-bold mb-4">
             Customer Reviews

@@ -1,7 +1,9 @@
+// NewArrivals.jsx
+
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/api"; // ✅ centralized api
 import { Heart, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -10,12 +12,12 @@ const NewArrivals = () => {
   const [loading, setLoading] = useState(true);
   const userId = localStorage.getItem("userId");
 
-  // 🟢 Fetch ONLY 6 new arrival products (no category, no others)
+  // 🟢 Fetch ONLY 6 new arrival products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/new-arrivals");
-        setProducts(res.data.slice(0, 6)); // ✅ only 6 products
+        const res = await api.get("/new-arrivals");
+        setProducts((res.data || []).slice(0, 6));
       } catch (err) {
         console.error("❌ Error fetching new arrivals:", err);
       } finally {
@@ -33,11 +35,11 @@ const NewArrivals = () => {
     }
 
     try {
-      await axios.post(
-        "http://localhost:3000/api/cart/add",
-        { userId, productId, quantity: 1 },
-        { withCredentials: true }
-      );
+      await api.post("/api/cart/add", {
+        userId,
+        productId,
+        quantity: 1,
+      });
       alert("🛒 Product added to cart successfully!");
     } catch (err) {
       console.error("❌ Add to cart failed:", err);
@@ -51,12 +53,12 @@ const NewArrivals = () => {
       alert("Please log in to save items ❤️");
       return;
     }
+
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/wishlist/add",
-        { userId, productId },
-        { withCredentials: true }
-      );
+      const res = await api.post("/api/wishlist/add", {
+        userId,
+        productId,
+      });
       alert(res.data.message || "❤️ Added to wishlist!");
     } catch (err) {
       console.error("❌ Wishlist error:", err);
@@ -106,7 +108,7 @@ const NewArrivals = () => {
         />
       </div>
 
-      {/* ✅ FIXED 3x2 GRID */}
+      {/* Products Grid */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -121,12 +123,12 @@ const NewArrivals = () => {
           >
             {/* Image */}
             <img
-              src={`http://localhost:3000/uploads/${product.Prod_img?.[0]}`}
+              src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${product.Prod_img?.[0]}`}
               alt={product.name}
               className="w-full h-64 object-cover rounded-t-2xl"
             />
 
-            {/* Product Info */}
+            {/* Info */}
             <div className="p-4 space-y-2">
               <h4 className="text-lg font-semibold text-gray-800">
                 {product.name}
@@ -134,16 +136,16 @@ const NewArrivals = () => {
               <p className="text-sm text-gray-500 line-clamp-2">
                 {product.description}
               </p>
-              <p className="text-black font-semibold tracking-wide">
+              <p className="text-black font-semibold">
                 ₹ {product.price.toLocaleString()}
               </p>
             </div>
 
-            {/* Buttons */}
+            {/* Actions */}
             <div className="flex justify-between items-center px-4 pb-4">
               <button
                 onClick={() => handleAddToCart(product._id)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-black text-beige hover:bg-beige hover:text-black transition-all duration-300"
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-black text-beige hover:bg-beige hover:text-black transition"
               >
                 <ShoppingCart size={14} />
                 Add to Cart
@@ -151,11 +153,11 @@ const NewArrivals = () => {
 
               <button
                 onClick={() => handleAddToWishlist(product._id)}
-                className="flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 hover:bg-pink-100 transition-all"
+                className="flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 hover:bg-pink-100 transition"
               >
                 <Heart
                   size={18}
-                  className="text-gray-600 hover:text-pink-500 transition-transform duration-200 hover:scale-110"
+                  className="text-gray-600 hover:text-pink-500"
                 />
               </button>
             </div>

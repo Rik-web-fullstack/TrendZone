@@ -1,7 +1,9 @@
+// Cart.jsx
+
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/api"; // ✅ centralized api
 import { Trash2, Plus, Minus, ShoppingBag, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -29,7 +31,7 @@ const Cart = () => {
 
   const fetchCart = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/cart/${id}`);
+      const res = await api.get(`/api/cart/${id}`);
       const validItems = (res.data.cart || []).filter(
         (item) => item && item.product
       );
@@ -45,7 +47,7 @@ const Cart = () => {
   const updateQuantity = async (productId, newQty) => {
     if (newQty < 1) return;
     try {
-      await axios.put("http://localhost:3000/api/cart/update", {
+      await api.put("/api/cart/update", {
         userId,
         productId,
         quantity: newQty,
@@ -66,7 +68,7 @@ const Cart = () => {
   /* ---------------- REMOVE ITEM ---------------- */
   const removeFromCart = async (productId) => {
     try {
-      await axios.delete("http://localhost:3000/api/cart/remove", {
+      await api.delete("/api/cart/remove", {
         data: { userId, productId },
       });
 
@@ -84,9 +86,8 @@ const Cart = () => {
     0
   );
 
-  const shipping = subtotal > 0 ? 0 : 0;
-  const tax = Math.round(subtotal * 0.05); // 5% tax
-  const total = subtotal + shipping + tax;
+  const tax = Math.round(subtotal * 0.05);
+  const total = subtotal + tax;
 
   const handleCheckout = () => {
     if (total > 0) {
@@ -154,7 +155,7 @@ const Cart = () => {
                   >
                     {/* PRODUCT IMAGE */}
                     <img
-                      src={`http://localhost:3000/uploads/${item.product.Prod_img?.[0]}`}
+                      src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${item.product.Prod_img?.[0]}`}
                       alt={item.product.name}
                       className="w-24 h-24 object-cover rounded-xl"
                     />

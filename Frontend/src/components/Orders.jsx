@@ -1,7 +1,9 @@
+// Orders.jsx
+
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/api"; // ✅ centralized api
 import { useNavigate } from "react-router-dom";
 import { Loader, XCircle, RotateCcw } from "lucide-react";
 
@@ -10,18 +12,13 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // ✅ Fetch orders (FIXED)
+  /* ✅ Fetch orders */
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:3000/api/orders/my-orders",
-          { withCredentials: true }
-        );
-
+        const res = await api.get("/api/orders/my-orders");
         setOrders(res.data.orders || []);
       } catch (err) {
-        // 🔥 Redirect ONLY if unauthorized
         if (err.response?.status === 401 || err.response?.status === 403) {
           navigate("/login");
         } else {
@@ -35,17 +32,12 @@ const Orders = () => {
     fetchOrders();
   }, [navigate]);
 
-  // ❌ Cancel order
+  /* ❌ Cancel order */
   const cancelOrder = async (orderId) => {
     if (!window.confirm("Are you sure you want to cancel this order?")) return;
 
     try {
-      await axios.post(
-        `http://localhost:3000/api/orders/${orderId}/cancel`,
-        {},
-        { withCredentials: true }
-      );
-
+      await api.post(`/api/orders/${orderId}/cancel`);
       setOrders((prev) =>
         prev.map((o) =>
           o._id === orderId ? { ...o, status: "Cancelled" } : o
@@ -56,17 +48,12 @@ const Orders = () => {
     }
   };
 
-  // 🔁 Return order
+  /* 🔁 Return order */
   const returnOrder = async (orderId) => {
     if (!window.confirm("Do you want to return this product?")) return;
 
     try {
-      await axios.post(
-        `http://localhost:3000/api/orders/${orderId}/return`,
-        {},
-        { withCredentials: true }
-      );
-
+      await api.post(`/api/orders/${orderId}/return`);
       setOrders((prev) =>
         prev.map((o) =>
           o._id === orderId ? { ...o, status: "Returned" } : o
@@ -98,7 +85,7 @@ const Orders = () => {
               key={order._id}
               className="border border-beige-muted/20 rounded-lg p-5 bg-black/60 backdrop-blur-md"
             >
-              {/* Order header */}
+              {/* Header */}
               <div className="flex justify-between items-center mb-4">
                 <div>
                   <p className="text-sm text-beige-muted">
@@ -132,7 +119,11 @@ const Orders = () => {
                   className="flex gap-4 border-t border-beige-muted/10 pt-4"
                 >
                   <img
-                    src={item.product.image}
+                    src={
+                      item.product?.image?.startsWith("http")
+                        ? item.product.image
+                        : `${import.meta.env.VITE_API_BASE_URL}${item.product.image}`
+                    }
                     alt={item.product.name}
                     className="w-20 h-20 object-cover rounded-md"
                   />

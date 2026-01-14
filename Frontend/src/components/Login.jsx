@@ -1,5 +1,7 @@
+// Login.jsx
+
 import React, { useState } from "react";
-import axios from "axios";
+import api from "../api/api"; // ✅ centralized api
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Lock, Mail, LogIn, User } from "lucide-react";
@@ -14,12 +16,12 @@ const Login = () => {
 
   const ACCENT = "#5c5346";
 
-  // 🧠 Handle Input Change
+  // Handle input
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 🟢 Handle Login
+  // Login
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -27,13 +29,9 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/users/login",
-        formData,
-        { withCredentials: true }
-      );
+      const res = await api.post("/api/users/login", formData);
 
-      if (res.data.user && res.data.user._id) {
+      if (res.data.user?._id) {
         localStorage.setItem("userId", res.data.user._id);
         localStorage.setItem("isGuest", "false");
       }
@@ -52,7 +50,7 @@ const Login = () => {
     }
   };
 
-  // 👥 Continue as Guest
+  // Guest login
   const handleGuestLogin = () => {
     localStorage.setItem("isGuest", "true");
     localStorage.removeItem("userId");
@@ -67,18 +65,17 @@ const Login = () => {
         transition={{ duration: 0.6 }}
         className="bg-white p-10 rounded-2xl shadow-lg border border-[#e8e3da] w-full max-w-md text-center"
       >
-        {/* Header */}
         <div className="flex flex-col items-center mb-6">
           <LogIn size={42} className="text-[#5c5346] mb-3" />
-          <h2 className="text-3xl font-extrabold text-[#1a1a1a]">Welcome Back</h2>
+          <h2 className="text-3xl font-extrabold text-[#1a1a1a]">
+            Welcome Back
+          </h2>
           <p className="text-gray-600 text-sm mt-1">
             Log in to access your account
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5 text-left">
-          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-[#5c5346] mb-1">
               Email
@@ -92,12 +89,11 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full bg-transparent py-2 focus:outline-none text-[#1a1a1a] placeholder-gray-400"
+                className="w-full bg-transparent py-2 focus:outline-none"
               />
             </div>
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-[#5c5346] mb-1">
               Password
@@ -111,16 +107,15 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="w-full bg-transparent py-2 focus:outline-none text-[#1a1a1a] placeholder-gray-400"
+                className="w-full bg-transparent py-2 focus:outline-none"
               />
             </div>
           </div>
 
-          {/* Login Button */}
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded-xl font-semibold transition-all ${
+            className={`w-full py-3 rounded-xl font-semibold ${
               loading
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-[#5c5346] hover:bg-[#1a1a1a]"
@@ -129,28 +124,21 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </button>
 
-          {/* Continue as Guest */}
           <motion.button
             type="button"
             onClick={handleGuestLogin}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full py-3 rounded-xl border border-[#dcd5c9] bg-[#f9f7f3] hover:bg-[#efeae2] transition-all flex items-center justify-center gap-2 text-[#5c5346] font-medium mt-2"
+            className="w-full py-3 rounded-xl border bg-[#f9f7f3] hover:bg-[#efeae2] flex justify-center gap-2 text-[#5c5346]"
           >
             <User size={18} />
             Continue as Guest
           </motion.button>
         </form>
 
-        {/* Messages */}
-        {error && (
-          <p className="text-red-500 mt-4 text-sm font-medium">{error}</p>
-        )}
-        {message && (
-          <p className="text-green-600 mt-4 text-sm font-medium">{message}</p>
-        )}
+        {error && <p className="text-red-500 mt-4 text-sm">{error}</p>}
+        {message && <p className="text-green-600 mt-4 text-sm">{message}</p>}
 
-        {/* Signup Link */}
         <p className="text-gray-600 mt-6 text-sm">
           Don’t have an account?{" "}
           <span
