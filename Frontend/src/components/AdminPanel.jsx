@@ -1,22 +1,26 @@
 // AdminPanel.jsx
-
 import React, { useState, useEffect } from "react";
-import api from "../api/api"; // ✅ use centralized api
+import axios from "axios";
 import { Pencil, Trash2 } from "lucide-react";
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdminPanel = () => {
   const [files, setFiles] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [Category, setCategory] = useState("");
   const [SubCategory, setSubCategory] = useState("");
+
   const [uploading, setUploading] = useState(false);
-  const [previewUrls, setPreviewUrls] = useState([]);
   const [products, setProducts] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
+  /* ================= CATEGORY MAP ================= */
   const categories = {
     furniture: ["sofa & sectionals", "chairs", "tables", "beds", "wardrobes", "storage units", "tv stands"],
     lighting: ["ceiling lights", "table lamps", "floor lamps", "wall lights", "pendant lights"],
@@ -24,20 +28,21 @@ const AdminPanel = () => {
     indoors: ["home decor", "wall art", "mirrors", "clocks", "rugs & carpets", "curtains"],
   };
 
+  /* ================= FILE HANDLING ================= */
   const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setFiles(selectedFiles);
-    setPreviewUrls(selectedFiles.map((file) => URL.createObjectURL(file)));
+    const selected = Array.from(e.target.files);
+    setFiles(selected);
+    setPreviewUrls(selected.map((f) => URL.createObjectURL(f)));
   };
 
-  // ✅ Fetch products
+  /* ================= FETCH PRODUCTS ================= */
   const fetchProducts = async () => {
     try {
       setLoadingProducts(true);
-      const res = await api.get("/api/admin/products");
-      setProducts(res.data.products || []);
-    } catch (error) {
-      console.error("Failed to fetch products:", error);
+      const res = await axios.get(`${API}/api/products`);
+      setProducts(res.data || []);
+    } catch (err) {
+      console.error("Fetch products failed:", err);
     } finally {
       setLoadingProducts(false);
     }
@@ -47,45 +52,86 @@ const AdminPanel = () => {
     fetchProducts();
   }, []);
 
-  // ✅ Upload product
-  const handleUpload = async (e) => {
+  /* ================= ADD / UPDATE ================= */
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!Category || !SubCategory) {
-      alert("Please select both category and subcategory.");
+      alert("Select category & subcategory");
       return;
     }
-
-    if (files.length === 0) {
-      alert("Please upload at least one image.");
-      return;
-    }
-
-    const formdata = new FormData();
-    formdata.append("name", name);
-    formdata.append("price", price);
-    formdata.append("description", description);
-    formdata.append("Category", Category);
-    formdata.append("SubCategory", SubCategory);
-    files.forEach((file) => formdata.append("file", file));
 
     try {
       setUploading(true);
-      const res = await api.post("/api/admin/products", formdata);
 
-      if (res.data.success) {
-        alert("✅ Product uploaded successfully!");
-        fetchProducts();
-        resetForm();
+      if (editingProduct) {
+        // UPDATE (no image reupload here)
+        await axios.put(
+          `${API}/api/admin/update-product/${editingProduct._id}`,
+          { name, price, description, Category, SubCategory },
+          { withCredentials: true }
+        );
+
+        alert("✅ Product updated");
       } else {
-        alert("⚠️ Upload failed.");
+        // ADD PRODUCT
+        if (files.length === 0) {
+          alert("Upload at least one image");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("price", price);
+        formData.append("description", description);
+        formData.append("Category", Category);
+        formData.append("SubCategory", SubCategory);
+        files.forEach((f) => formData.append("images", f));
+
+        await axios.post(
+          `${API}/api/admin/add-product`,
+          formData,
+          { withCredentials: true }
+        );
+
+        alert("✅ Product uploaded");
       }
-    } catch (error) {
-      console.error(error);
-      alert("❌ Failed to upload product.");
+
+      resetForm();
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      alert("❌ Action failed");
     } finally {
       setUploading(false);
     }
+  };
+
+  /* ================= DELETE ================= */
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this product?")) return;
+    try {
+      await axios.delete(
+        `${API}/api/admin/delete-product/${id}`,
+        { withCredentials: true }
+      );
+      setProducts((prev) => prev.filter((p) => p._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("❌ Delete failed");
+    }
+  };
+
+  /* ================= EDIT ================= */
+  const handleEdit = (p) => {
+    setEditingProduct(p);
+    setName(p.name);
+    setPrice(p.price);
+    setDescription(p.description);
+    setCategory(p.Category);
+    setSubCategory(p.SubCategory);
+    setFiles([]);
+    setPreviewUrls([]);
   };
 
   const resetForm = () => {
@@ -96,111 +142,91 @@ const AdminPanel = () => {
     setSubCategory("");
     setFiles([]);
     setPreviewUrls([]);
+    setEditingProduct(null);
   };
 
-  // ✅ Delete product
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
-    try {
-      await api.delete(`/api/admin/products/${id}`);
-      setProducts((prev) => prev.filter((p) => p._id !== id));
-    } catch (error) {
-      console.error("Delete failed:", error);
-    }
-  };
-
-  // Edit
-  const handleEdit = (product) => {
-    setEditingProduct(product);
-    setName(product.name);
-    setPrice(product.price);
-    setDescription(product.description);
-    setCategory(product.Category);
-    setSubCategory(product.SubCategory);
-  };
-
-  // ✅ Update product
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      await api.put(`/api/admin/products/${editingProduct._id}`, {
-        name,
-        price,
-        description,
-        Category,
-        SubCategory,
-      });
-
-      alert("✅ Product updated!");
-      setEditingProduct(null);
-      fetchProducts();
-      resetForm();
-    } catch (error) {
-      console.error("Update failed:", error);
-      alert("❌ Failed to update product.");
-    }
-  };
-
+  /* ================= UI ================= */
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-6xl mx-auto px-6">
+
         {/* FORM */}
         <form
-          onSubmit={editingProduct ? handleUpdate : handleUpload}
-          className="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl mx-auto space-y-4 mb-12"
+          onSubmit={handleSubmit}
+          className="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto space-y-4 mb-12"
         >
           <h2 className="text-2xl font-bold text-center">
-            {editingProduct ? "Edit Product ✏️" : "Admin Panel – Add Product"}
+            {editingProduct ? "✏️ Edit Product" : "➕ Add Product"}
           </h2>
 
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Product Name" className="input" required />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="input" required />
           <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price" className="input" required />
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className="input" required />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className="input" />
 
-          <select value={Category} onChange={(e) => { setCategory(e.target.value); setSubCategory(""); }} required>
+          <select value={Category} onChange={(e) => { setCategory(e.target.value); setSubCategory(""); }} className="input" required>
             <option value="">Select Category</option>
-            {Object.keys(categories).map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
+            {Object.keys(categories).map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
 
-          <select value={SubCategory} onChange={(e) => setSubCategory(e.target.value)} disabled={!Category} required>
+          <select value={SubCategory} onChange={(e) => setSubCategory(e.target.value)} className="input" disabled={!Category} required>
             <option value="">Select SubCategory</option>
-            {Category && categories[Category].map((sub) => (
-              <option key={sub} value={sub}>{sub}</option>
-            ))}
+            {Category && categories[Category].map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
 
-          <input type="file" multiple onChange={handleFileChange} required={!editingProduct} />
+          {!editingProduct && (
+            <input type="file" multiple accept="image/*" onChange={handleFileChange} />
+          )}
 
-          <button type="submit" disabled={uploading}>
-            {editingProduct ? "Save Changes" : uploading ? "Uploading..." : "Upload Product"}
-          </button>
+          {previewUrls.length > 0 && (
+            <div className="grid grid-cols-3 gap-3">
+              {previewUrls.map((u, i) => (
+                <img key={i} src={u} className="h-24 object-cover rounded" />
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button className="flex-1 bg-indigo-600 text-white py-2 rounded">
+              {uploading ? "Processing..." : editingProduct ? "Save Changes" : "Upload"}
+            </button>
+            {editingProduct && (
+              <button type="button" onClick={resetForm} className="px-4 bg-gray-200 rounded">
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
 
         {/* PRODUCTS */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <div key={product._id} className="bg-white p-4 rounded shadow">
-              <img
-                src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${product.Prod_img?.[0]}`}
-                alt={product.name}
-                className="h-48 w-full object-cover"
-              />
-              <h4>{product.name}</h4>
-              <p>₹{product.price}</p>
+        <h3 className="text-2xl font-semibold mb-6">📦 Products</h3>
 
-              <div className="flex justify-between">
-                <button onClick={() => handleEdit(product)}>
-                  <Pencil size={16} /> Edit
-                </button>
-                <button onClick={() => handleDelete(product._id)}>
-                  <Trash2 size={16} /> Delete
-                </button>
+        {loadingProducts ? (
+          <p>Loading...</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((p) => (
+              <div key={p._id} className="bg-white p-4 rounded-xl shadow">
+                <img
+                  src={p.Prod_img?.[0]}
+                  alt={p.name}
+                  className="h-48 w-full object-cover rounded mb-3"
+                />
+                <h4 className="font-semibold">{p.name}</h4>
+                <p className="text-sm text-gray-500">{p.description}</p>
+                <p className="font-bold mt-2">₹{p.price}</p>
+
+                <div className="flex justify-between mt-4">
+                  <button onClick={() => handleEdit(p)} className="text-blue-600 flex gap-1">
+                    <Pencil size={16} /> Edit
+                  </button>
+                  <button onClick={() => handleDelete(p._id)} className="text-red-600 flex gap-1">
+                    <Trash2 size={16} /> Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

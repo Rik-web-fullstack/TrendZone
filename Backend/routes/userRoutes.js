@@ -4,9 +4,6 @@ const users = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-/* ================================
-   🔐 ENV SECRET (REQUIRED)
-================================ */
 const JWT_SECRET = process.env.JWT_SECRET;
 
 /* ================================
@@ -33,13 +30,12 @@ router.post("/register", async (req, res) => {
     await newUser.save();
     res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
-    console.error("Registration Error:", error);
     res.status(400).json({ message: "Error during registration" });
   }
 });
 
 /* ================================
-   🔵 LOGIN (COOKIE SAFE)
+   🔵 LOGIN
 ================================ */
 router.post("/login", async (req, res) => {
   try {
@@ -53,14 +49,16 @@ router.post("/login", async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,          // 🔥 REQUIRED on Render
-      sameSite: "none",      // 🔥 REQUIRED for cross-origin
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -70,10 +68,10 @@ router.post("/login", async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
-    console.error("Login Error:", error);
     res.status(500).json({ message: "Login failed" });
   }
 });
@@ -99,15 +97,16 @@ router.get("/verify", async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
-  } catch (error) {
+  } catch {
     res.status(401).json({ loggedIn: false });
   }
 });
 
 /* ================================
-   🔴 LOGOUT (FIXED)
+   🔴 LOGOUT
 ================================ */
 router.post("/logout", (req, res) => {
   res.clearCookie("token", {

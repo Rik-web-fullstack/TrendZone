@@ -1,16 +1,14 @@
 require("dotenv").config();
 const db = require("./config/db");
 const express = require("express");
-const path = require("path");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-
 
 const userRoutes = require("./routes/userRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const productRoutes = require("./routes/productRoutes");
-const uploadRoutes = require("./routes/upload");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 
@@ -21,8 +19,8 @@ app.set("trust proxy", 1);
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",                 // local dev
-      "https://trendzone-frontend.onrender.com"     // 🔥 CHANGE THIS
+      "http://localhost:5173",
+      "https://trendzone-frontend.onrender.com",
     ],
     credentials: true,
   })
@@ -32,24 +30,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-/* ================== STATIC FILES ================== */
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
 /* ================== ROUTES ================== */
 app.use("/api/users", userRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/admin/products", uploadRoutes);
+app.use("/api/admin", adminRoutes);
 
 /* ================== NEW ARRIVALS ================== */
 app.get("/new-arrivals", async (req, res) => {
   try {
-    const productModel = require("./models/productModel");
-    const latestProducts = await productModel
-      .find()
+    const Product = require("./models/productModel");
+    const latestProducts = await Product.find()
       .sort({ _id: -1 })
       .limit(6);
+
     res.json(latestProducts);
   } catch (err) {
     res.status(500).json({ error: err.message });

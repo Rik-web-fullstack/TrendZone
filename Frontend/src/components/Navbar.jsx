@@ -121,6 +121,10 @@ const Navbar = () => {
       setSearchQuery("");
     }
   };
+  useEffect(() => {
+  console.log("Navbar user:", user);
+}, [user]);
+
 
   return (
     <nav
@@ -192,18 +196,33 @@ const Navbar = () => {
                   className="absolute right-0 mt-3 w-56 bg-black rounded-md"
                 >
                   {user ? (
-                    <ul>
-                      <li className="px-4 py-2 text-beige">
-                        Hello, {user.name}
-                      </li>
-                      <li
-                        onClick={handleLogout}
-                        className="px-4 py-2 text-red-400 cursor-pointer flex items-center gap-2"
-                      >
-                        <LogOut size={16} /> Logout
-                      </li>
-                    </ul>
-                  ) : (
+  <ul>
+    <li className="px-4 py-2 text-beige">
+      Hello, {user.name}
+    </li>
+
+    {/* 🔥 ADMIN ONLY OPTION */}
+    {user.role === "admin" && (
+      <li
+        onClick={() => {
+          navigate("/admin");
+          setAccountOpen(false);
+        }}
+        className="px-4 py-2 text-indigo-400 cursor-pointer hover:bg-beige/10"
+      >
+        ➕ Add Products
+      </li>
+    )}
+
+    <li
+      onClick={handleLogout}
+      className="px-4 py-2 text-red-400 cursor-pointer flex items-center gap-2"
+    >
+      <LogOut size={16} /> Logout
+    </li>
+  </ul>
+) : (
+
                     <ul>
                       <li
                         onClick={() => navigate("/login")}
