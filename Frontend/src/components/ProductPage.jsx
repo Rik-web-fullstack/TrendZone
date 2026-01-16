@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../api/api"; // ✅ centralized api
+import api from "../api/api";
 import { Heart, ShoppingCart } from "lucide-react";
 import Navbar from "./Navbar";
 
@@ -50,7 +50,8 @@ const ProductPage = () => {
           });
         }
 
-        setProducts(response.data || []);
+        // ✅ FIXED HERE
+        setProducts(response.data.products || []);
       } catch (error) {
         console.error("❌ Error fetching products:", error);
       } finally {
@@ -151,7 +152,11 @@ const ProductPage = () => {
                 onClick={() => navigate(`/product/${product._id}`)}
               >
                 <img
-                  src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${product.Prod_img?.[0]}`}
+                  src={
+                    product.Prod_img && product.Prod_img.length > 0
+                      ? `${import.meta.env.VITE_API_BASE_URL}/uploads/${product.Prod_img[0]}`
+                      : ""
+                  }
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />

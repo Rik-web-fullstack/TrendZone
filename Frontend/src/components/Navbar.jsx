@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api"; // ✅ centralized api
+import api from "../api/api";
 import {
   Heart,
   ShoppingCart,
@@ -62,15 +62,23 @@ const Navbar = () => {
     ],
   };
 
-  /* ✅ Verify login */
+  /* ✅ Verify login (401 is NORMAL when logged out) */
   useEffect(() => {
-    api
-      .get("/api/users/verify")
-      .then((res) => {
-        if (res.data.loggedIn) setUser(res.data.user);
-        else setUser(null);
-      })
-      .catch(() => setUser(null));
+    const verifyUser = async () => {
+      try {
+        const res = await api.get("/api/users/verify");
+        if (res.data?.loggedIn) {
+          setUser(res.data.user);
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        // ✅ 401 = not logged in → NOT an error
+        setUser(null);
+      }
+    };
+
+    verifyUser();
   }, []);
 
   /* ✅ Scroll listener */
@@ -92,10 +100,6 @@ const Navbar = () => {
     } catch (err) {
       console.error("Logout failed:", err);
     }
-  };
-
-  const toggleDropdown = (menu) => {
-    setDropdown(dropdown === menu ? null : menu);
   };
 
   const handleNavigate = (category, subcategory = null) => {
@@ -133,7 +137,7 @@ const Navbar = () => {
           initial={{ y: -15, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/")}
           className="text-2xl font-bold cursor-pointer"
         >
           <span className="text-beige">Furni</span>
@@ -162,8 +166,14 @@ const Navbar = () => {
 
         {/* Icons */}
         <div className="flex items-center gap-5">
-          <Heart onClick={() => navigate("/wishlist")} className={`w-6 h-6 ${navIconColor} cursor-pointer`} />
-          <ShoppingCart onClick={() => navigate("/cart")} className={`w-6 h-6 ${navIconColor} cursor-pointer`} />
+          <Heart
+            onClick={() => navigate("/wishlist")}
+            className={`w-6 h-6 ${navIconColor} cursor-pointer`}
+          />
+          <ShoppingCart
+            onClick={() => navigate("/cart")}
+            className={`w-6 h-6 ${navIconColor} cursor-pointer`}
+          />
 
           {/* Account */}
           <div
@@ -183,17 +193,28 @@ const Navbar = () => {
                 >
                   {user ? (
                     <ul>
-                      <li className="px-4 py-2 text-beige">Hello, {user.name}</li>
-                      <li onClick={handleLogout} className="px-4 py-2 text-red-400 cursor-pointer flex items-center gap-2">
+                      <li className="px-4 py-2 text-beige">
+                        Hello, {user.name}
+                      </li>
+                      <li
+                        onClick={handleLogout}
+                        className="px-4 py-2 text-red-400 cursor-pointer flex items-center gap-2"
+                      >
                         <LogOut size={16} /> Logout
                       </li>
                     </ul>
                   ) : (
                     <ul>
-                      <li onClick={() => navigate("/login")} className="px-4 py-2 text-beige cursor-pointer">
+                      <li
+                        onClick={() => navigate("/login")}
+                        className="px-4 py-2 text-beige cursor-pointer"
+                      >
                         Login
                       </li>
-                      <li onClick={() => navigate("/register")} className="px-4 py-2 text-beige cursor-pointer">
+                      <li
+                        onClick={() => navigate("/register")}
+                        className="px-4 py-2 text-beige cursor-pointer"
+                      >
                         Sign Up
                       </li>
                     </ul>
@@ -203,10 +224,55 @@ const Navbar = () => {
             </AnimatePresence>
           </div>
 
-          <div className={`md:hidden cursor-pointer ${navIconColor}`} onClick={() => setMobileMenu(!mobileMenu)}>
+          <div
+            className={`md:hidden cursor-pointer ${navIconColor}`}
+            onClick={() => setMobileMenu(!mobileMenu)}
+          >
             {mobileMenu ? <X size={24} /> : <Menu size={24} />}
           </div>
         </div>
+      </div>
+
+      {/* Desktop Categories */}
+      <div className="hidden md:flex justify-center border-t border-beige-muted/10 bg-black/80">
+        <ul className="flex gap-10 py-3 text-beige-muted uppercase text-sm">
+          {Object.entries(categories).map(([key, subs]) => (
+            <li
+              key={key}
+              className="relative cursor-pointer"
+              onMouseEnter={() => setDropdown(key)}
+              onMouseLeave={() => setDropdown(null)}
+            >
+              <div
+                onClick={() => handleNavigate(key)}
+                className="flex items-center gap-1 hover:text-beige capitalize"
+              >
+                {key} <ChevronDown size={16} />
+              </div>
+
+              <AnimatePresence>
+                {dropdown === key && (
+                  <motion.ul
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute left-0 mt-2 w-56 bg-black border border-beige-muted/20 rounded-md shadow-lg z-50"
+                  >
+                    {subs.map((sub) => (
+                      <li
+                        key={sub}
+                        onClick={() => handleNavigate(key, sub)}
+                        className="px-4 py-2 text-beige hover:bg-beige/10 cursor-pointer"
+                      >
+                        {sub}
+                      </li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </li>
+          ))}
+        </ul>
       </div>
     </nav>
   );

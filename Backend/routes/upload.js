@@ -13,9 +13,16 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+
+router.get("/ping", (req, res) => {
+  res.json({ ok: true, message: "Admin products route is working" });
+});
+
 /* ==========================================================
    ✅ CREATE PRODUCT (Upload)
 ========================================================== */
+
+
 router.post("/", upload.array("file", 12), async (req, res) => {
   try {
     const { name, price, description, Category, SubCategory } = req.body;

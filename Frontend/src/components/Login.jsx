@@ -41,7 +41,7 @@ const Login = () => {
       }
 
       setMessage(res.data.message || "Login successful!");
-      setTimeout(() => navigate("/home"), 1000);
+      setTimeout(() => navigate("/"), 1000);
     } catch (err) {
       console.error("Login error:", err);
       setError(err.response?.data?.message || "Invalid email or password.");
@@ -54,7 +54,7 @@ const Login = () => {
   const handleGuestLogin = () => {
     localStorage.setItem("isGuest", "true");
     localStorage.removeItem("userId");
-    navigate("/home");
+    navigate("/");
   };
 
   return (

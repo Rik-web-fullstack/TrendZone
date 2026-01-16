@@ -89,7 +89,7 @@ const Wishlist = () => {
             You need to log in to view your wishlist.
           </p>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/login")}
             className="px-8 py-3 rounded-full bg-[#5c5346] text-white font-semibold hover:bg-black transition"
           >
             Go to Login
