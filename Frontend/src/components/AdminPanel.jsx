@@ -40,7 +40,7 @@ const AdminPanel = () => {
     try {
       setLoadingProducts(true);
       const res = await axios.get(`${API}/api/products`);
-      setProducts(res.data || []);
+      setProducts(res.data.products || []);
     } catch (err) {
       console.error("Fetch products failed:", err);
     } finally {
