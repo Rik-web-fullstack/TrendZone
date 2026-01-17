@@ -1,10 +1,8 @@
-// ProductDetails.jsx
-
 "use client";
 
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import api from "../api/api"; // ✅ centralized api
+import api from "../api/api";
 import {
   Star,
   Heart,
@@ -41,14 +39,19 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState("");
 
+  /* ---------------- FETCH PRODUCT ---------------- */
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const res = await api.get(`/api/products/${id}`);
-        setProduct(res.data);
-        setSelectedImage(res.data?.Prod_img?.[0]);
+
+        // 🔴 handle both possible response shapes
+        const data = res.data.product || res.data;
+
+        setProduct(data);
+        setSelectedImage(data?.Prod_img?.[0] || "");
       } catch (error) {
-        console.error("Fetch failed:", error);
+        console.error("❌ Fetch failed:", error);
       } finally {
         setLoading(false);
       }
@@ -57,10 +60,10 @@ const ProductDetails = () => {
     if (id) fetchProduct();
   }, [id]);
 
-  // 🛒 Add to Cart
+  /* ---------------- ADD TO CART ---------------- */
   const handleAddToCart = async () => {
     if (!userId) {
-      alert("Please log in to add items to cart 🧑‍💻");
+      alert("Please log in to add items to cart 🛒");
       navigate("/login");
       return;
     }
@@ -78,7 +81,7 @@ const ProductDetails = () => {
     }
   };
 
-  // 💖 Add to Wishlist
+  /* ---------------- ADD TO WISHLIST ---------------- */
   const handleAddToWishlist = async () => {
     if (!userId) {
       alert("Please log in to save items ❤️");
@@ -120,8 +123,10 @@ const ProductDetails = () => {
       </>
     );
 
+  /* ---------------- PRICE FIX ---------------- */
+  const price = Number(product.price);
   const discount = 20;
-  const discountedPrice = Math.round(product.price * (1 - discount / 100));
+  const discountedPrice = Math.round(price * (1 - discount / 100));
   const rating = 4.3;
 
   return (
@@ -130,26 +135,41 @@ const ProductDetails = () => {
 
       <div className="max-w-6xl mx-auto px-6 py-24 mt-32">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+
           {/* IMAGE SECTION */}
           <div>
-            <img
-              src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${selectedImage}`}
-              className="w-full h-[420px] object-cover rounded-xl shadow"
-              alt={product.name}
-            />
+            {selectedImage ? (
+              <img
+                src={selectedImage}
+                className="w-full h-[420px] object-cover rounded-xl shadow"
+                alt={product.name}
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder.png";
+                }}
+              />
+            ) : (
+              <div className="w-full h-[420px] rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">
+                No image available
+              </div>
+            )}
 
             <div className="flex gap-3 mt-4">
               {product.Prod_img?.map((img, index) => (
                 <img
                   key={index}
-                  src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${img}`}
+                  src={img}
                   onClick={() => setSelectedImage(img)}
                   className={`w-20 h-20 object-cover rounded-lg cursor-pointer border ${
                     selectedImage === img
                       ? "border-indigo-600"
                       : "border-gray-300"
                   }`}
-                  alt=""
+                  alt={`${product.name} ${index + 1}`}
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.src = "/placeholder.png";
+                  }}
                 />
               ))}
             </div>
@@ -180,9 +200,7 @@ const ProductDetails = () => {
             </div>
 
             <div className="mt-4">
-              <p className="text-gray-500 line-through">
-                ₹{product.price}
-              </p>
+              <p className="text-gray-500 line-through">₹{price}</p>
               <p className="text-3xl font-bold text-indigo-600">
                 ₹{discountedPrice}
                 <span className="text-green-600 text-lg ml-2">
@@ -263,6 +281,7 @@ const ProductDetails = () => {
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );

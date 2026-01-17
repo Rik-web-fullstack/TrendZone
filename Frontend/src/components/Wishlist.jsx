@@ -142,10 +142,15 @@ const Wishlist = () => {
                     exit={{ opacity: 0 }}
                   >
                     <img
-                      src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${product.Prod_img?.[0]}`}
-                      alt={product.name}
-                      className="h-56 w-full object-cover rounded-2xl"
-                    />
+  src={product.Prod_img?.[0]}
+  alt={product.name}
+  className="h-56 w-full object-cover rounded-2xl"
+  loading="lazy"
+  onError={(e) => {
+    e.currentTarget.src = "/placeholder.png";
+  }}
+/>
+
 
                     <div className="mt-4 space-y-2">
                       <h3 className="text-lg font-semibold">

@@ -57,7 +57,7 @@ const Payment = () => {
       await clearCartAfterPayment();
       setLoading(false);
       alert("✅ Payment Successful! Thank you for your purchase.");
-      navigate("/home");
+      navigate("/");
     }, 1500);
   };
 

@@ -152,14 +152,15 @@ const ProductPage = () => {
                 onClick={() => navigate(`/product/${product._id}`)}
               >
                 <img
-                  src={
-                    product.Prod_img && product.Prod_img.length > 0
-                      ? `${import.meta.env.VITE_API_BASE_URL}/uploads/${product.Prod_img[0]}`
-                      : ""
-                  }
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
+  src={product.Prod_img?.[0] || "/placeholder.png"}
+  alt={product.name}
+  loading="lazy"
+  onError={(e) => {
+    e.currentTarget.src = "/placeholder.png";
+  }}
+  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+/>
+
               </div>
 
               {/* Floating Icons */}

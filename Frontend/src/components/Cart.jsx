@@ -155,10 +155,15 @@ const Cart = () => {
                   >
                     {/* PRODUCT IMAGE */}
                     <img
-                      src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${item.product.Prod_img?.[0]}`}
-                      alt={item.product.name}
-                      className="w-24 h-24 object-cover rounded-xl"
-                    />
+  src={item.product.Prod_img?.[0]}
+  alt={item.product.name}
+  className="w-24 h-24 object-cover rounded-xl"
+  loading="lazy"
+  onError={(e) => {
+    e.currentTarget.src = "/placeholder.png";
+  }}
+/>
+
 
                     {/* PRODUCT INFO */}
                     <div className="flex-1">

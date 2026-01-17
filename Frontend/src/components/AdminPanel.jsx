@@ -1,11 +1,12 @@
 // AdminPanel.jsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Plus, Search } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdminPanel = () => {
+  /* ================= STATE ================= */
   const [files, setFiles] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
 
@@ -15,17 +16,20 @@ const AdminPanel = () => {
   const [Category, setCategory] = useState("");
   const [SubCategory, setSubCategory] = useState("");
 
-  const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
+
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
 
   /* ================= CATEGORY MAP ================= */
   const categories = {
-    furniture: ["sofa & sectionals", "chairs", "tables", "beds", "wardrobes", "storage units", "tv stands"],
-    lighting: ["ceiling lights", "table lamps", "floor lamps", "wall lights", "pendant lights"],
-    outdoors: ["garden furniture", "planters & pots", "outdoor decor", "accessories", "garden tools"],
-    indoors: ["home decor", "wall art", "mirrors", "clocks", "rugs & carpets", "curtains"],
+    furniture: ["sofa & sectionals", "chairs", "tables", "beds", "wardrobes"],
+    lighting: ["ceiling lights", "table lamps", "floor lamps"],
+    outdoors: ["garden furniture", "planters", "decor"],
+    indoors: ["home decor", "wall art", "mirrors"],
   };
 
   /* ================= FILE HANDLING ================= */
@@ -56,29 +60,19 @@ const AdminPanel = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!Category || !SubCategory) {
-      alert("Select category & subcategory");
-      return;
-    }
+    if (!Category || !SubCategory) return alert("Select category & subcategory");
 
     try {
       setUploading(true);
 
       if (editingProduct) {
-        // UPDATE (no image reupload here)
         await axios.put(
           `${API}/api/admin/update-product/${editingProduct._id}`,
           { name, price, description, Category, SubCategory },
           { withCredentials: true }
         );
-
-        alert("✅ Product updated");
       } else {
-        // ADD PRODUCT
-        if (files.length === 0) {
-          alert("Upload at least one image");
-          return;
-        }
+        if (!files.length) return alert("Upload at least one image");
 
         const formData = new FormData();
         formData.append("name", name);
@@ -93,15 +87,13 @@ const AdminPanel = () => {
           formData,
           { withCredentials: true }
         );
-
-        alert("✅ Product uploaded");
       }
 
       resetForm();
       fetchProducts();
     } catch (err) {
       console.error(err);
-      alert("❌ Action failed");
+      alert("Action failed");
     } finally {
       setUploading(false);
     }
@@ -109,16 +101,15 @@ const AdminPanel = () => {
 
   /* ================= DELETE ================= */
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this product?")) return;
+    if (!confirm("Delete this product?")) return;
     try {
       await axios.delete(
         `${API}/api/admin/delete-product/${id}`,
         { withCredentials: true }
       );
-      setProducts((prev) => prev.filter((p) => p._id !== id));
-    } catch (err) {
-      console.error(err);
-      alert("❌ Delete failed");
+      setProducts((p) => p.filter((x) => x._id !== id));
+    } catch {
+      alert("Delete failed");
     }
   };
 
@@ -132,9 +123,11 @@ const AdminPanel = () => {
     setSubCategory(p.SubCategory);
     setFiles([]);
     setPreviewUrls([]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const resetForm = () => {
+    setEditingProduct(null);
     setName("");
     setPrice("");
     setDescription("");
@@ -142,21 +135,43 @@ const AdminPanel = () => {
     setSubCategory("");
     setFiles([]);
     setPreviewUrls([]);
-    setEditingProduct(null);
   };
+
+  /* ================= FILTERED PRODUCTS ================= */
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+      const matchCategory = filterCategory
+        ? p.Category === filterCategory
+        : true;
+      return matchSearch && matchCategory;
+    });
+  }, [products, search, filterCategory]);
 
   /* ================= UI ================= */
   return (
     <div className="min-h-screen bg-gray-50 py-10">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-6">
+
+        {/* HEADER */}
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <div className="flex gap-4">
+            <div className="bg-white px-4 py-2 rounded shadow">
+              Total Products: <b>{products.length}</b>
+            </div>
+          </div>
+        </div>
 
         {/* FORM */}
         <form
           onSubmit={handleSubmit}
-          className="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto space-y-4 mb-12"
+          className={`bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto space-y-4 mb-14 ${
+            editingProduct ? "border-2 border-indigo-500" : ""
+          }`}
         >
-          <h2 className="text-2xl font-bold text-center">
-            {editingProduct ? "✏️ Edit Product" : "➕ Add Product"}
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Plus /> {editingProduct ? "Edit Product" : "Add Product"}
           </h2>
 
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="input" required />
@@ -178,9 +193,9 @@ const AdminPanel = () => {
           )}
 
           {previewUrls.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="flex gap-2 overflow-x-auto">
               {previewUrls.map((u, i) => (
-                <img key={i} src={u} className="h-24 object-cover rounded" />
+                <img key={i} src={u} className="h-24 w-24 object-cover rounded" />
               ))}
             </div>
           )}
@@ -197,22 +212,42 @@ const AdminPanel = () => {
           </div>
         </form>
 
-        {/* PRODUCTS */}
-        <h3 className="text-2xl font-semibold mb-6">📦 Products</h3>
+        {/* SEARCH & FILTER */}
+        <div className="flex flex-wrap gap-4 mb-6">
+          <div className="flex items-center bg-white px-3 rounded shadow">
+            <Search size={18} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search product..."
+              className="outline-none px-2 py-1"
+            />
+          </div>
 
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="bg-white px-3 py-2 rounded shadow"
+          >
+            <option value="">All Categories</option>
+            {Object.keys(categories).map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* PRODUCTS */}
         {loadingProducts ? (
-          <p>Loading...</p>
+          <p>Loading products...</p>
+        ) : filteredProducts.length === 0 ? (
+          <p className="text-gray-500">No products found.</p>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((p) => (
+            {filteredProducts.map((p) => (
               <div key={p._id} className="bg-white p-4 rounded-xl shadow">
-                <img
-                  src={p.Prod_img?.[0]}
-                  alt={p.name}
-                  className="h-48 w-full object-cover rounded mb-3"
-                />
+                <img src={p.Prod_img?.[0]} className="h-48 w-full object-cover rounded mb-3" />
                 <h4 className="font-semibold">{p.name}</h4>
-                <p className="text-sm text-gray-500">{p.description}</p>
+                <p className="text-sm text-gray-500 line-clamp-2">{p.description}</p>
                 <p className="font-bold mt-2">₹{p.price}</p>
 
                 <div className="flex justify-between mt-4">
@@ -227,6 +262,7 @@ const AdminPanel = () => {
             ))}
           </div>
         )}
+
       </div>
     </div>
   );

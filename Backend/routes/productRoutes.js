@@ -51,4 +51,25 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// 🔍 SEARCH PRODUCTS (for Navbar)
+router.get("/search", async (req, res) => {
+  try {
+    const q = req.query.q || "";
+
+    if (!q.trim()) return res.json([]);
+
+    const products = await Product.find({
+      name: { $regex: q, $options: "i" },
+    })
+      .select("name price Prod_img")
+      .limit(6);
+
+    res.json(products);
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json([]);
+  }
+});
+
+
 module.exports = router;

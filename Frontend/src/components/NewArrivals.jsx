@@ -123,10 +123,11 @@ const NewArrivals = () => {
           >
             {/* Image */}
             <img
-              src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${product.Prod_img?.[0]}`}
-              alt={product.name}
-              className="w-full h-64 object-cover rounded-t-2xl"
-            />
+  src={product.Prod_img?.[0]}
+  alt={product.name}
+  className="w-full h-64 object-cover rounded-t-2xl"
+/>
+
 
             {/* Info */}
             <div className="p-4 space-y-2">
