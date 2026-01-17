@@ -18,7 +18,13 @@ const productSchema = new mongoose.Schema({
     lowercase: true,
     index: true,
   },
-  Prod_img: { type: [String], required: true },
+  Prod_img: [
+  {
+    url: { type: String, required: true },
+    public_id: { type: String, required: true }
+  }
+]
+
 });
 
 const Product = mongoose.model("product", productSchema);
