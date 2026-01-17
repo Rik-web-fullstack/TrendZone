@@ -49,7 +49,15 @@ const ProductDetails = () => {
         const data = res.data.product || res.data;
 
         setProduct(data);
-        setSelectedImage(data?.Prod_img?.[0] || "");
+        const firstImage =
+  data?.Prod_img?.length
+    ? typeof data.Prod_img[0] === "string"
+      ? data.Prod_img[0]
+      : data.Prod_img[0]?.url
+    : "";
+
+setSelectedImage(firstImage);
+
       } catch (error) {
         console.error("❌ Fetch failed:", error);
       } finally {
@@ -140,14 +148,15 @@ const ProductDetails = () => {
           <div>
             {selectedImage ? (
               <img
-                src={selectedImage}
-                className="w-full h-[420px] object-cover rounded-xl shadow"
-                alt={product.name}
-                loading="lazy"
-                onError={(e) => {
-                  e.currentTarget.src = "/placeholder.png";
-                }}
-              />
+  src={selectedImage || "/placeholder.png"}
+  className="w-full h-[420px] object-cover rounded-xl shadow"
+  alt={product.name}
+  loading="lazy"
+  onError={(e) => {
+    e.currentTarget.src = "/placeholder.png";
+  }}
+/>
+
             ) : (
               <div className="w-full h-[420px] rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">
                 No image available
@@ -155,23 +164,31 @@ const ProductDetails = () => {
             )}
 
             <div className="flex gap-3 mt-4">
-              {product.Prod_img?.map((img, index) => (
-                <img
-                  key={index}
-                  src={img}
-                  onClick={() => setSelectedImage(img)}
-                  className={`w-20 h-20 object-cover rounded-lg cursor-pointer border ${
-                    selectedImage === img
-                      ? "border-indigo-600"
-                      : "border-gray-300"
-                  }`}
-                  alt={`${product.name} ${index + 1}`}
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.src = "/placeholder.png";
-                  }}
-                />
-              ))}
+              {product?.Prod_img?.map((img, index) => {
+  const imageSrc =
+    typeof img === "string"
+      ? img                 // old products
+      : img?.url;           // new products
+
+  return (
+    <img
+      key={typeof img === "string" ? index : img.public_id}
+      src={imageSrc || "/placeholder.png"}
+      onClick={() => setSelectedImage(imageSrc)}
+      className={`w-20 h-20 object-cover rounded-lg cursor-pointer border ${
+        selectedImage === imageSrc
+          ? "border-indigo-600"
+          : "border-gray-300"
+      }`}
+      alt={`${product.name} ${index + 1}`}
+      loading="lazy"
+      onError={(e) => {
+        e.currentTarget.src = "/placeholder.png";
+      }}
+    />
+  );
+})}
+
             </div>
           </div>
 

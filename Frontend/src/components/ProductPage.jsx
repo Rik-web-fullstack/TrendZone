@@ -152,7 +152,13 @@ const ProductPage = () => {
                 onClick={() => navigate(`/product/${product._id}`)}
               >
                 <img
-  src={product.Prod_img?.[0] || "/placeholder.png"}
+  src={
+    product?.Prod_img?.length
+      ? typeof product.Prod_img[0] === "string"
+        ? product.Prod_img[0]          // old products
+        : product.Prod_img[0]?.url     // new products
+      : "/placeholder.png"
+  }
   alt={product.name}
   loading="lazy"
   onError={(e) => {
@@ -160,6 +166,7 @@ const ProductPage = () => {
   }}
   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
 />
+
 
               </div>
 

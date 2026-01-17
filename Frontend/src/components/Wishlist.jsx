@@ -141,8 +141,14 @@ const Wishlist = () => {
                     whileHover={{ scale: 1.03 }}
                     exit={{ opacity: 0 }}
                   >
-                    <img
-  src={product.Prod_img?.[0]}
+                   <img
+  src={
+    product?.Prod_img?.length
+      ? typeof product.Prod_img[0] === "string"
+        ? product.Prod_img[0]          // old products
+        : product.Prod_img[0]?.url     // new products
+      : "/placeholder.png"
+  }
   alt={product.name}
   className="h-56 w-full object-cover rounded-2xl"
   loading="lazy"
@@ -150,6 +156,7 @@ const Wishlist = () => {
     e.currentTarget.src = "/placeholder.png";
   }}
 />
+
 
 
                     <div className="mt-4 space-y-2">

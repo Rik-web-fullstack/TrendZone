@@ -122,11 +122,19 @@ const NewArrivals = () => {
             className="relative bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-500"
           >
             {/* Image */}
-            <img
-  src={product.Prod_img?.[0]}
+           <img
+  src={
+    product?.Prod_img?.length
+      ? typeof product.Prod_img[0] === "string"
+        ? product.Prod_img[0]
+        : product.Prod_img[0].url
+      : "/placeholder.png"
+  }
   alt={product.name}
   className="w-full h-64 object-cover rounded-t-2xl"
 />
+
+
 
 
             {/* Info */}

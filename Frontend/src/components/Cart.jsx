@@ -155,7 +155,13 @@ const Cart = () => {
                   >
                     {/* PRODUCT IMAGE */}
                     <img
-  src={item.product.Prod_img?.[0]}
+  src={
+    item?.product?.Prod_img?.length
+      ? typeof item.product.Prod_img[0] === "string"
+        ? item.product.Prod_img[0]          // old products
+        : item.product.Prod_img[0]?.url     // new products
+      : "/placeholder.png"
+  }
   alt={item.product.name}
   className="w-24 h-24 object-cover rounded-xl"
   loading="lazy"
@@ -163,6 +169,7 @@ const Cart = () => {
     e.currentTarget.src = "/placeholder.png";
   }}
 />
+
 
 
                     {/* PRODUCT INFO */}
