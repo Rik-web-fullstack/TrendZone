@@ -146,8 +146,11 @@ const Navbar = () => {
           onClick={() => navigate("/")}
           className="text-2xl font-bold cursor-pointer"
         >
-          <span className="text-beige">Trend</span>
-          <span className={scrolled ? "text-white" : "text-beige"}>Zone</span>
+          <span className="text-outline-fill">Trend</span>
+<span className="text-outline-fill">Zone</span>
+
+
+
         </div>
 
         {/* 🔍 SEARCH */}

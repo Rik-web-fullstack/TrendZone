@@ -8,7 +8,9 @@ export default {
     extend: {
       colors: {
         beige: '#F5F5DC',
-        'beige-muted': '#C5B79E', // subtle accent tone
+        'beige-muted': '#C5B79E',
+        brand: "#EAE6DF",
+  brandSoft: "#F1E7D8", // subtle accent tone
       },
       boxShadow: {
         'soft-beige': '0 6px 20px rgba(197,183,158,0.12)',
